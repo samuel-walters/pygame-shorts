@@ -1,6 +1,8 @@
 import pygame
 import numpy as np
 import pygame.midi
+import time
+import threading
 
 # Initialize Pygame and Pygame MIDI
 pygame.init()
@@ -10,25 +12,29 @@ pygame.midi.init()
 midi_output = pygame.midi.Output(0)
 midi_output.set_instrument(0)
 
-# Function to play a MIDI note
-def play_midi_note(note, duration=100):
-    midi_output.note_on(note, velocity=127)
-    pygame.time.delay(duration)
-    midi_output.note_off(note, velocity=127)
+# Function to play a MIDI note asynchronously
+def play_midi_note_async(note, duration=100):
+    def play_note():
+        midi_output.note_on(note, velocity=127)
+        pygame.time.delay(duration)
+        midi_output.note_off(note, velocity=127)
+    threading.Thread(target=play_note).start()
 
 # Constants
 WIDTH, HEIGHT = 600, 600
 LARGE_CIRCLE_RADIUS = 250
 SMALL_CIRCLE_RADIUS = 30
-GRAVITY = 0.5
-FRICTION = 0.99
-BOUNCE_FACTOR = 0.8
-MIN_VELOCITY_FOR_SOUND = 1.0
-VELOCITY_CHANGE_FOR_SOUND = 1.0
+GRAVITY = 0.3
+FRICTION = 0.98
+BOUNCE_FACTOR = 0.7
+MIN_VELOCITY_FOR_SOUND = 1.5
+SOUND_COOLDOWN = 0.2
+SLIDING_VELOCITY_THRESHOLD = 2.0
+SLIDING_FRICTION = 0.95
 
-# Initial velocity for the small circle
-INITIAL_VELOCITY = 5
-INITIAL_ANGLE = np.pi / 4  # 45 degrees
+# Initial velocity for the small ball
+INITIAL_SPEED = 8.0
+INITIAL_ANGLE = np.radians(45)
 
 # Colors
 WHITE = (255, 255, 255)
@@ -47,39 +53,51 @@ class Circle:
         self.radius = radius
         self.color = color
         self.vel_x, self.vel_y = vel_x, vel_y
+        self.last_sound_time = time.time()
+        self.is_sliding = False
 
     def draw(self):
         pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
 
     def update(self, note_to_play, play_sound=False):
-        initial_velocity = np.hypot(self.vel_x, self.vel_y)
+        current_time = time.time()
         self.vel_y += GRAVITY
         self.x += self.vel_x
         self.y += self.vel_y
-        self.vel_x *= FRICTION
-        self.vel_y *= FRICTION
 
         dist = np.hypot(WIDTH/2 - self.x, HEIGHT/2 - self.y)
         if dist + self.radius >= LARGE_CIRCLE_RADIUS:
-            overlap = dist + self.radius - LARGE_CIRCLE_RADIUS
-            nx, ny = (self.x - WIDTH/2) / dist, (self.y - HEIGHT/2) / dist
-            vel_dot_norm = self.vel_x * nx + self.vel_y * ny
-            self.vel_x -= 2 * vel_dot_norm * nx * BOUNCE_FACTOR
-            self.vel_y -= 2 * vel_dot_norm * ny * BOUNCE_FACTOR
-            self.x -= overlap * nx
-            self.y -= overlap * ny
-            
-            final_velocity = np.hypot(self.vel_x, self.vel_y)
-            velocity_change = abs(final_velocity - initial_velocity)
+            if not self.is_sliding:
+                overlap = dist + self.radius - LARGE_CIRCLE_RADIUS
+                nx, ny = (self.x - WIDTH/2) / dist, (self.y - HEIGHT/2) / dist
+                vel_dot_norm = self.vel_x * nx + self.vel_y * ny
+                self.vel_x -= 2 * vel_dot_norm * nx * BOUNCE_FACTOR
+                self.vel_y -= 2 * vel_dot_norm * ny * BOUNCE_FACTOR
+                self.x -= overlap * nx
+                self.y -= overlap * ny
 
-            if play_sound and (initial_velocity > MIN_VELOCITY_FOR_SOUND or velocity_change > VELOCITY_CHANGE_FOR_SOUND):
-                play_midi_note(note_to_play)
-                return (note_to_play + 1) % 128
+                if np.hypot(self.vel_x, self.vel_y) < SLIDING_VELOCITY_THRESHOLD:
+                    self.is_sliding = True
+                elif play_sound and current_time - self.last_sound_time > SOUND_COOLDOWN:
+                    play_midi_note_async(note_to_play)
+                    self.last_sound_time = current_time
+                    note_to_play = (note_to_play + 1) % 128
+            else:
+                # Apply reduced friction while sliding
+                self.vel_x *= SLIDING_FRICTION
+                self.vel_y *= SLIDING_FRICTION
+                if np.hypot(self.vel_x, self.vel_y) >= SLIDING_VELOCITY_THRESHOLD:
+                    self.is_sliding = False
+        else:
+            self.vel_x *= FRICTION
+            self.vel_y *= FRICTION
+            self.is_sliding = False
+
         return note_to_play
 
 # Initialize circles
 large_circle = Circle(WIDTH // 2, HEIGHT // 2, LARGE_CIRCLE_RADIUS, WHITE)
-small_circle = Circle(WIDTH // 2, HEIGHT // 2 - LARGE_CIRCLE_RADIUS + SMALL_CIRCLE_RADIUS, SMALL_CIRCLE_RADIUS, RED, INITIAL_VELOCITY * np.cos(INITIAL_ANGLE), INITIAL_VELOCITY * np.sin(INITIAL_ANGLE))
+small_circle = Circle(WIDTH // 2, HEIGHT // 2 - LARGE_CIRCLE_RADIUS + SMALL_CIRCLE_RADIUS, SMALL_CIRCLE_RADIUS, RED, INITIAL_SPEED * np.cos(INITIAL_ANGLE), INITIAL_SPEED * np.sin(INITIAL_ANGLE))
 
 note_to_play = 60  # Middle C
 
