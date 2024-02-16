@@ -7,23 +7,28 @@ pygame.init()
 pygame.midi.init()
 
 # MIDI setup
-midi_output = pygame.midi.Output(0)  # Use the default MIDI output
-midi_output.set_instrument(0)  # Set instrument (0 is usually a grand piano)
+midi_output = pygame.midi.Output(0)
+midi_output.set_instrument(0)
 
 # Function to play a MIDI note
 def play_midi_note(note, duration=100):
-    midi_output.note_on(note, velocity=127)  # Start the note
-    pygame.time.delay(duration)  # Duration of the note
-    midi_output.note_off(note, velocity=127)  # Stop the note
+    midi_output.note_on(note, velocity=127)
+    pygame.time.delay(duration)
+    midi_output.note_off(note, velocity=127)
 
 # Constants
 WIDTH, HEIGHT = 600, 600
 LARGE_CIRCLE_RADIUS = 250
 SMALL_CIRCLE_RADIUS = 30
-GRAVITY = 0.1
+GRAVITY = 0.5
 FRICTION = 0.99
-BOUNCE_FACTOR = 1.2
-MIN_VELOCITY_FOR_SOUND = 2.0  # Minimum velocity for playing sound
+BOUNCE_FACTOR = 0.8
+MIN_VELOCITY_FOR_SOUND = 1.0
+VELOCITY_CHANGE_FOR_SOUND = 1.0
+
+# Initial velocity for the small circle
+INITIAL_VELOCITY = 5
+INITIAL_ANGLE = np.pi / 4  # 45 degrees
 
 # Colors
 WHITE = (255, 255, 255)
@@ -37,11 +42,11 @@ clock = pygame.time.Clock()
 
 # Circle class
 class Circle:
-    def __init__(self, x, y, radius, color):
+    def __init__(self, x, y, radius, color, vel_x=0, vel_y=0):
         self.x, self.y = x, y
         self.radius = radius
         self.color = color
-        self.vel_x, self.vel_y = 0, 0
+        self.vel_x, self.vel_y = vel_x, vel_y
 
     def draw(self):
         pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
@@ -65,14 +70,16 @@ class Circle:
             self.y -= overlap * ny
             
             final_velocity = np.hypot(self.vel_x, self.vel_y)
-            if play_sound and initial_velocity > MIN_VELOCITY_FOR_SOUND and final_velocity > MIN_VELOCITY_FOR_SOUND:
+            velocity_change = abs(final_velocity - initial_velocity)
+
+            if play_sound and (initial_velocity > MIN_VELOCITY_FOR_SOUND or velocity_change > VELOCITY_CHANGE_FOR_SOUND):
                 play_midi_note(note_to_play)
                 return (note_to_play + 1) % 128
         return note_to_play
 
 # Initialize circles
 large_circle = Circle(WIDTH // 2, HEIGHT // 2, LARGE_CIRCLE_RADIUS, WHITE)
-small_circle = Circle(WIDTH // 2, HEIGHT // 2 - LARGE_CIRCLE_RADIUS + SMALL_CIRCLE_RADIUS, SMALL_CIRCLE_RADIUS, RED)
+small_circle = Circle(WIDTH // 2, HEIGHT // 2 - LARGE_CIRCLE_RADIUS + SMALL_CIRCLE_RADIUS, SMALL_CIRCLE_RADIUS, RED, INITIAL_VELOCITY * np.cos(INITIAL_ANGLE), INITIAL_VELOCITY * np.sin(INITIAL_ANGLE))
 
 note_to_play = 60  # Middle C
 
