@@ -20,18 +20,19 @@ def play_midi_note_async(note, duration=100):
         midi_output.note_off(note, velocity=127)
     threading.Thread(target=play_note).start()
 
-# Adjusted constants for window and circle sizes
-WIDTH, HEIGHT = 1000, 1000  # Enlarged window size
-LARGE_CIRCLE_RADIUS = 400   # Enlarged large circle radius
-SMALL_CIRCLE_RADIUS = 20    # Reduced small circle radius
+# Adjusted constants for window, circle sizes, and sliding behavior
+WIDTH, HEIGHT = 1000, 1000
+LARGE_CIRCLE_RADIUS = 400
+SMALL_CIRCLE_RADIUS = 20
 GRAVITY = 9.81 / 60.0
 FRICTION_COEFFICIENT = 0.2
 STATIC_FRICTION_THRESHOLD = 0.5
 BOUNCE_FACTOR = 0.7
-BOUNCE_VELOCITY_THRESHOLD = 1.4
+BOUNCE_VELOCITY_THRESHOLD = 1.3
+SLIDING_COEFFICIENT = 0.6  # New constant to control sliding smoothness/speed
 
 # Initial velocity for the small ball
-INITIAL_SPEED = 25.0  # Adjusted for larger space
+INITIAL_SPEED = 25.0
 INITIAL_ANGLE = np.radians(95)
 
 # Colors
@@ -81,7 +82,7 @@ class Circle:
 
             # Check if a significant bounce occurred
             if abs(vel_dot_norm) > BOUNCE_VELOCITY_THRESHOLD:
-                play_midi_note_async(note_to_play)  # Play sound on significant bounce
+                play_midi_note_async(note_to_play)
                 note_to_play = (note_to_play + 1) % 128
 
         # Apply friction and rolling
@@ -89,11 +90,11 @@ class Circle:
             # Compute friction force
             friction_force = FRICTION_COEFFICIENT * GRAVITY * np.hypot(self.vel_x, self.vel_y)
 
-            # Apply friction in the opposite direction of velocity
+            # Apply sliding effect
             if self.vel_x != 0:
-                self.vel_x -= friction_force * np.sign(self.vel_x)
+                self.vel_x -= friction_force * np.sign(self.vel_x) * SLIDING_COEFFICIENT
             if self.vel_y != 0:
-                self.vel_y -= friction_force * np.sign(self.vel_y)
+                self.vel_y -= friction_force * np.sign(self.vel_y) * SLIDING_COEFFICIENT
 
         # Update position
         self.x += self.vel_x
@@ -101,7 +102,7 @@ class Circle:
 
         return note_to_play
 
-# Initialize circles with new sizes
+# Initialize circles
 large_circle = Circle(WIDTH // 2, HEIGHT // 2, LARGE_CIRCLE_RADIUS, WHITE)
 small_circle = Circle(WIDTH // 2, HEIGHT // 2 - LARGE_CIRCLE_RADIUS + SMALL_CIRCLE_RADIUS, SMALL_CIRCLE_RADIUS, RED, INITIAL_SPEED * np.cos(INITIAL_ANGLE), INITIAL_SPEED * np.sin(INITIAL_ANGLE))
 
