@@ -28,12 +28,12 @@ GRAVITY = 9.81 / 60.0
 FRICTION_COEFFICIENT = 0.2
 STATIC_FRICTION_THRESHOLD = 0.5
 BOUNCE_FACTOR = 0.7
-BOUNCE_VELOCITY_THRESHOLD = 1.3
+BOUNCE_VELOCITY_THRESHOLD = 0.8 # Velocity threshold for bounce sound
 SLIDING_COEFFICIENT = 0.6  # New constant to control sliding smoothness/speed
 
 # Initial velocity for the small ball
-INITIAL_SPEED = 25.0
-INITIAL_ANGLE = np.radians(95)
+INITIAL_SPEED = 42
+INITIAL_ANGLE = np.radians(14)
 
 # Colors
 WHITE = (255, 255, 255)
