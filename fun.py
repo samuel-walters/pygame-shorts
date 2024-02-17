@@ -25,10 +25,10 @@ WIDTH, HEIGHT = 600, 600
 LARGE_CIRCLE_RADIUS = 250
 SMALL_CIRCLE_RADIUS = 30
 GRAVITY = 9.81 / 60.0  # Assuming 60 frames per second
-FRICTION_COEFFICIENT = 0.2  # Reduced kinetic friction coefficient for smoother rolling
+FRICTION_COEFFICIENT = 0.2  # Kinetic friction coefficient
 STATIC_FRICTION_THRESHOLD = 0.5
 BOUNCE_FACTOR = 0.7
-BOUNCE_VELOCITY_THRESHOLD = 5.0  # Velocity threshold for bounce sound
+BOUNCE_VELOCITY_THRESHOLD = 1.4  # Lowered threshold for more sensitive bounce detection
 
 # Initial velocity for the small ball
 INITIAL_SPEED = 15.0
@@ -79,9 +79,9 @@ class Circle:
             self.vel_x -= 2 * vel_dot_norm * nx * BOUNCE_FACTOR
             self.vel_y -= 2 * vel_dot_norm * ny * BOUNCE_FACTOR
 
-            # Check if bounce occurred (significant change in velocity)
+            # Check if a significant bounce occurred
             if abs(vel_dot_norm) > BOUNCE_VELOCITY_THRESHOLD:
-                play_midi_note_async(note_to_play)  # Play sound on bounce
+                play_midi_note_async(note_to_play)  # Play sound on significant bounce
                 note_to_play = (note_to_play + 1) % 128
 
         # Apply friction and rolling
