@@ -25,10 +25,10 @@ WIDTH, HEIGHT = 600, 600
 LARGE_CIRCLE_RADIUS = 250
 SMALL_CIRCLE_RADIUS = 30
 GRAVITY = 9.81 / 60.0  # Assuming 60 frames per second
-FRICTION_COEFFICIENT = 0.1  # Kinetic friction coefficient
-STATIC_FRICTION_THRESHOLD = 2.0
+FRICTION_COEFFICIENT = 0.3  # Kinetic friction coefficient
+STATIC_FRICTION_THRESHOLD = 1.0
 BOUNCE_FACTOR = 0.7
-SOUND_COOLDOWN = 0.2
+BOUNCE_VELOCITY_THRESHOLD = 5.0  # Velocity threshold for bounce sound
 
 # Initial velocity for the small ball
 INITIAL_SPEED = 15.0
@@ -51,14 +51,11 @@ class Circle:
         self.radius = radius
         self.color = color
         self.vel_x, self.vel_y = vel_x, vel_y
-        self.last_sound_time = time.time()
 
     def draw(self):
         pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
 
-    def update(self, note_to_play, play_sound=False):
-        current_time = time.time()
-
+    def update(self, note_to_play):
         # Apply gravity
         self.vel_y += GRAVITY
 
@@ -82,10 +79,9 @@ class Circle:
             self.vel_x -= 2 * vel_dot_norm * nx * BOUNCE_FACTOR
             self.vel_y -= 2 * vel_dot_norm * ny * BOUNCE_FACTOR
 
-            # Play sound on collision
-            if play_sound and current_time - self.last_sound_time > SOUND_COOLDOWN:
-                play_midi_note_async(note_to_play)
-                self.last_sound_time = current_time
+            # Check if bounce occurred (significant change in velocity)
+            if abs(vel_dot_norm) > BOUNCE_VELOCITY_THRESHOLD:
+                play_midi_note_async(note_to_play)  # Play sound on bounce
                 note_to_play = (note_to_play + 1) % 128
 
         # Apply friction and rolling
@@ -120,7 +116,7 @@ while running:
 
     screen.fill(BLACK)
     large_circle.draw()
-    note_to_play = small_circle.update(note_to_play, play_sound=True)
+    note_to_play = small_circle.update(note_to_play)
     small_circle.draw()
 
     pygame.display.flip()
