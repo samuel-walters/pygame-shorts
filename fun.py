@@ -20,19 +20,19 @@ def play_midi_note_async(note, duration=100):
         midi_output.note_off(note, velocity=127)
     threading.Thread(target=play_note).start()
 
-# Constants
-WIDTH, HEIGHT = 600, 600
-LARGE_CIRCLE_RADIUS = 250
-SMALL_CIRCLE_RADIUS = 30
-GRAVITY = 9.81 / 60.0  # Assuming 60 frames per second
-FRICTION_COEFFICIENT = 0.2  # Kinetic friction coefficient
+# Adjusted constants for window and circle sizes
+WIDTH, HEIGHT = 800, 800  # Larger window size
+LARGE_CIRCLE_RADIUS = 350  # Larger large circle radius
+SMALL_CIRCLE_RADIUS = 25   # Larger small circle radius
+GRAVITY = 9.81 / 60.0
+FRICTION_COEFFICIENT = 0.2
 STATIC_FRICTION_THRESHOLD = 0.5
 BOUNCE_FACTOR = 0.7
-BOUNCE_VELOCITY_THRESHOLD = 1.4  # Lowered threshold for more sensitive bounce detection
+BOUNCE_VELOCITY_THRESHOLD = 1.4
 
 # Initial velocity for the small ball
-INITIAL_SPEED = 15.0
-INITIAL_ANGLE = np.radians(45)
+INITIAL_SPEED = 25.0  # Adjusted for larger space
+INITIAL_ANGLE = np.radians(95)
 
 # Colors
 WHITE = (255, 255, 255)
@@ -101,7 +101,7 @@ class Circle:
 
         return note_to_play
 
-# Initialize circles
+# Initialize circles with new sizes
 large_circle = Circle(WIDTH // 2, HEIGHT // 2, LARGE_CIRCLE_RADIUS, WHITE)
 small_circle = Circle(WIDTH // 2, HEIGHT // 2 - LARGE_CIRCLE_RADIUS + SMALL_CIRCLE_RADIUS, SMALL_CIRCLE_RADIUS, RED, INITIAL_SPEED * np.cos(INITIAL_ANGLE), INITIAL_SPEED * np.sin(INITIAL_ANGLE))
 
