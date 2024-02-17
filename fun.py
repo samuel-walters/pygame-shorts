@@ -21,9 +21,9 @@ def play_midi_note_async(note, duration=100):
     threading.Thread(target=play_note).start()
 
 # Adjusted constants for window and circle sizes
-WIDTH, HEIGHT = 800, 800  # Larger window size
-LARGE_CIRCLE_RADIUS = 350  # Larger large circle radius
-SMALL_CIRCLE_RADIUS = 25   # Larger small circle radius
+WIDTH, HEIGHT = 1000, 1000  # Enlarged window size
+LARGE_CIRCLE_RADIUS = 400   # Enlarged large circle radius
+SMALL_CIRCLE_RADIUS = 20    # Reduced small circle radius
 GRAVITY = 9.81 / 60.0
 FRICTION_COEFFICIENT = 0.2
 STATIC_FRICTION_THRESHOLD = 0.5
