@@ -25,8 +25,8 @@ WIDTH, HEIGHT = 600, 600
 LARGE_CIRCLE_RADIUS = 250
 SMALL_CIRCLE_RADIUS = 30
 GRAVITY = 9.81 / 60.0  # Assuming 60 frames per second
-FRICTION_COEFFICIENT = 0.3  # Kinetic friction coefficient
-STATIC_FRICTION_THRESHOLD = 1.0
+FRICTION_COEFFICIENT = 0.2  # Reduced kinetic friction coefficient for smoother rolling
+STATIC_FRICTION_THRESHOLD = 0.5
 BOUNCE_FACTOR = 0.7
 BOUNCE_VELOCITY_THRESHOLD = 5.0  # Velocity threshold for bounce sound
 
