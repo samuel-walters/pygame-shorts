@@ -16,7 +16,7 @@ midi_output.set_instrument(0)
 def play_midi_note_async(note, duration=100):
     def play_note():
         midi_output.note_on(note, velocity=127)
-        pygame.time.delay(duration)
+        time.sleep(duration / 1000)
         midi_output.note_off(note, velocity=127)
     threading.Thread(target=play_note).start()
 
@@ -24,16 +24,14 @@ def play_midi_note_async(note, duration=100):
 WIDTH, HEIGHT = 600, 600
 LARGE_CIRCLE_RADIUS = 250
 SMALL_CIRCLE_RADIUS = 30
-GRAVITY = 0.3
-FRICTION = 0.98
+GRAVITY = 9.81 / 60.0  # Assuming 60 frames per second
+FRICTION = 0.1  # Kinetic friction
+STATIC_FRICTION_THRESHOLD = 2.0
 BOUNCE_FACTOR = 0.7
-MIN_VELOCITY_FOR_SOUND = 1.5
 SOUND_COOLDOWN = 0.2
-SLIDING_VELOCITY_THRESHOLD = 2.0
-SLIDING_FRICTION = 0.95
 
 # Initial velocity for the small ball
-INITIAL_SPEED = 8.0
+INITIAL_SPEED = 15.0
 INITIAL_ANGLE = np.radians(45)
 
 # Colors
@@ -54,44 +52,57 @@ class Circle:
         self.color = color
         self.vel_x, self.vel_y = vel_x, vel_y
         self.last_sound_time = time.time()
-        self.is_sliding = False
 
     def draw(self):
         pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
 
     def update(self, note_to_play, play_sound=False):
         current_time = time.time()
-        self.vel_y += GRAVITY
+
+        # Apply gravity
+        gravity_force = GRAVITY
+        self.vel_y += gravity_force
+
+        # Calculate next position
+        next_x = self.x + self.vel_x
+        next_y = self.y + self.vel_y
+
+        # Check for collision with large circle
+        dist = np.hypot(WIDTH / 2 - next_x, HEIGHT / 2 - next_y)
+        if dist + self.radius >= LARGE_CIRCLE_RADIUS:
+            # Collision detected, resolve it
+            nx, ny = (next_x - WIDTH / 2) / dist, (next_y - HEIGHT / 2) / dist
+            overlap = (dist + self.radius) - LARGE_CIRCLE_RADIUS
+
+            # Position correction
+            self.x -= overlap * nx
+            self.y -= overlap * ny
+
+            # Reflect velocity
+            vel_dot_norm = self.vel_x * nx + self.vel_y * ny
+            self.vel_x -= 2 * vel_dot_norm * nx * BOUNCE_FACTOR
+            self.vel_y -= 2 * vel_dot_norm * ny * BOUNCE_FACTOR
+
+            # Play sound on collision
+            if play_sound and current_time - self.last_sound_time > SOUND_COOLDOWN:
+                play_midi_note_async(note_to_play)
+                self.last_sound_time = current_time
+                note_to_play = (note_to_play + 1) % 128
+
+        # Friction and rolling
+        if dist + self.radius > LARGE_CIRCLE_RADIUS:
+            # Static friction
+            if np.hypot(self.vel_x, self.vel_y) < STATIC_FRICTION_THRESHOLD:
+                self.vel_x, self.vel_y = 0, 0
+            else:
+                # Kinetic friction
+                friction_force = FRICTION * gravity_force
+                self.vel_x -= np.sign(self.vel_x) * friction_force
+                self.vel_y -= np.sign(self.vel_y) * friction_force
+
+        # Update position
         self.x += self.vel_x
         self.y += self.vel_y
-
-        dist = np.hypot(WIDTH/2 - self.x, HEIGHT/2 - self.y)
-        if dist + self.radius >= LARGE_CIRCLE_RADIUS:
-            if not self.is_sliding:
-                overlap = dist + self.radius - LARGE_CIRCLE_RADIUS
-                nx, ny = (self.x - WIDTH/2) / dist, (self.y - HEIGHT/2) / dist
-                vel_dot_norm = self.vel_x * nx + self.vel_y * ny
-                self.vel_x -= 2 * vel_dot_norm * nx * BOUNCE_FACTOR
-                self.vel_y -= 2 * vel_dot_norm * ny * BOUNCE_FACTOR
-                self.x -= overlap * nx
-                self.y -= overlap * ny
-
-                if np.hypot(self.vel_x, self.vel_y) < SLIDING_VELOCITY_THRESHOLD:
-                    self.is_sliding = True
-                elif play_sound and current_time - self.last_sound_time > SOUND_COOLDOWN:
-                    play_midi_note_async(note_to_play)
-                    self.last_sound_time = current_time
-                    note_to_play = (note_to_play + 1) % 128
-            else:
-                # Apply reduced friction while sliding
-                self.vel_x *= SLIDING_FRICTION
-                self.vel_y *= SLIDING_FRICTION
-                if np.hypot(self.vel_x, self.vel_y) >= SLIDING_VELOCITY_THRESHOLD:
-                    self.is_sliding = False
-        else:
-            self.vel_x *= FRICTION
-            self.vel_y *= FRICTION
-            self.is_sliding = False
 
         return note_to_play
 
