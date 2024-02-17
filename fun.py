@@ -25,7 +25,7 @@ WIDTH, HEIGHT = 600, 600
 LARGE_CIRCLE_RADIUS = 250
 SMALL_CIRCLE_RADIUS = 30
 GRAVITY = 9.81 / 60.0  # Assuming 60 frames per second
-FRICTION = 0.1  # Kinetic friction
+FRICTION_COEFFICIENT = 0.1  # Kinetic friction coefficient
 STATIC_FRICTION_THRESHOLD = 2.0
 BOUNCE_FACTOR = 0.7
 SOUND_COOLDOWN = 0.2
@@ -60,8 +60,7 @@ class Circle:
         current_time = time.time()
 
         # Apply gravity
-        gravity_force = GRAVITY
-        self.vel_y += gravity_force
+        self.vel_y += GRAVITY
 
         # Calculate next position
         next_x = self.x + self.vel_x
@@ -89,16 +88,16 @@ class Circle:
                 self.last_sound_time = current_time
                 note_to_play = (note_to_play + 1) % 128
 
-        # Friction and rolling
+        # Apply friction and rolling
         if dist + self.radius > LARGE_CIRCLE_RADIUS:
-            # Static friction
-            if np.hypot(self.vel_x, self.vel_y) < STATIC_FRICTION_THRESHOLD:
-                self.vel_x, self.vel_y = 0, 0
-            else:
-                # Kinetic friction
-                friction_force = FRICTION * gravity_force
-                self.vel_x -= np.sign(self.vel_x) * friction_force
-                self.vel_y -= np.sign(self.vel_y) * friction_force
+            # Compute friction force
+            friction_force = FRICTION_COEFFICIENT * GRAVITY * np.hypot(self.vel_x, self.vel_y)
+
+            # Apply friction in the opposite direction of velocity
+            if self.vel_x != 0:
+                self.vel_x -= friction_force * np.sign(self.vel_x)
+            if self.vel_y != 0:
+                self.vel_y -= friction_force * np.sign(self.vel_y)
 
         # Update position
         self.x += self.vel_x
