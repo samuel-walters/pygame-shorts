@@ -3,6 +3,7 @@ import numpy as np
 import pygame.midi
 import time
 import threading
+import pygame.gfxdraw
 
 # Initialize Pygame and Pygame MIDI
 pygame.init()
@@ -21,9 +22,10 @@ def play_midi_note_async(note, duration=100):
     threading.Thread(target=play_note).start()
 
 # Adjusted constants for window, circle sizes, and sliding behavior
-WIDTH, HEIGHT = 1000, 1000
-LARGE_CIRCLE_RADIUS = 400
+info = pygame.display.Info()
+WIDTH, HEIGHT = info.current_w, info.current_h
 SMALL_CIRCLE_RADIUS = 20
+LARGE_CIRCLE_RADIUS = min(WIDTH, HEIGHT) // 2
 GRAVITY = 9.81 / 60.0
 FRICTION_COEFFICIENT = 0.2
 STATIC_FRICTION_THRESHOLD = 0.5
@@ -32,8 +34,8 @@ BOUNCE_VELOCITY_THRESHOLD = 0.8 # Velocity threshold for bounce sound
 SLIDING_COEFFICIENT = 0.6  # New constant to control sliding smoothness/speed
 
 # Initial velocity for the small ball
-INITIAL_SPEED = 42
-INITIAL_ANGLE = np.radians(14)
+INITIAL_SPEED = 98
+INITIAL_ANGLE = np.radians(104)
 
 # Colors
 WHITE = (255, 255, 255)
@@ -41,7 +43,7 @@ RED = (255, 0, 0)
 BLACK = (0, 0, 0)
 
 # Setup display
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
 pygame.display.set_caption("Circle Physics Simulation")
 clock = pygame.time.Clock()
 
@@ -54,7 +56,8 @@ class Circle:
         self.vel_x, self.vel_y = vel_x, vel_y
 
     def draw(self):
-        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
+        pygame.gfxdraw.aacircle(screen, int(self.x), int(self.y), self.radius, self.color)
+        pygame.gfxdraw.filled_circle(screen, int(self.x), int(self.y), self.radius, self.color)
 
     def update(self, note_to_play):
         # Apply gravity
