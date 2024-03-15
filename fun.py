@@ -5,7 +5,7 @@ import time
 import threading
 import pygame.gfxdraw
 
-# Initialize Pygame and Pygame MIDI
+# Initialise Pygame and Pygame MIDI
 pygame.init()
 pygame.midi.init()
 
@@ -105,7 +105,7 @@ class Circle:
 
         return note_to_play
 
-# Initialize circles
+# Initialise circles
 large_circle = Circle(WIDTH // 2, HEIGHT // 2, LARGE_CIRCLE_RADIUS, WHITE)
 small_circle = Circle(WIDTH // 2, HEIGHT // 2 - LARGE_CIRCLE_RADIUS + SMALL_CIRCLE_RADIUS, SMALL_CIRCLE_RADIUS, RED, INITIAL_SPEED * np.cos(INITIAL_ANGLE), INITIAL_SPEED * np.sin(INITIAL_ANGLE))
 
