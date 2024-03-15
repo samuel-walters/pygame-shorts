@@ -4,6 +4,7 @@ import pygame.midi
 import time
 import threading
 import pygame.gfxdraw
+import colorsys
 
 # Initialise Pygame and Pygame MIDI
 pygame.init()
@@ -54,6 +55,7 @@ class Circle:
         self.radius = radius
         self.color = color
         self.vel_x, self.vel_y = vel_x, vel_y
+        self.trail = []  # Store the trail positions
 
     def draw(self):
         pygame.gfxdraw.aacircle(screen, int(self.x), int(self.y), self.radius, self.color)
@@ -103,6 +105,11 @@ class Circle:
         self.x += self.vel_x
         self.y += self.vel_y
 
+        # Update the trail
+        self.trail.append((self.x, self.y))
+        if len(self.trail) > 100:  # Limit the trail length
+            self.trail.pop(0)
+
         return note_to_play
 
 # Initialise circles
@@ -119,12 +126,24 @@ while running:
             running = False
 
     screen.fill(BLACK)
+
     large_circle.draw()
     note_to_play = small_circle.update(note_to_play)
     small_circle.draw()
 
+    # Draw the colorful trail
+    for i, pos in enumerate(small_circle.trail):
+        hue = (i / len(small_circle.trail)) % 1
+        color = tuple(int(c * 255) for c in colorsys.hsv_to_rgb(hue, 1, 1))
+        pygame.draw.circle(screen, color, (int(pos[0]), int(pos[1])), SMALL_CIRCLE_RADIUS // 2)
+
     pygame.display.flip()
     clock.tick(60)
+
+    # Randomly perturb the small circle's velocity
+    if np.random.rand() < 0.01:
+        small_circle.vel_x += np.random.uniform(-1, 1)
+        small_circle.vel_y += np.random.uniform(-1, 1)
 
 # Clean up
 midi_output.close()
